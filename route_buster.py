@@ -17,8 +17,7 @@ with open(args.actionlist, "r") as a:
             actions.append(line.strip())
         except:
             print("Exception occurred")
-            
-print("Path                - \tGet\tPost")
+print("Path                - \tGet\tPost\tPut\tPatch")
 with open(args.wordlist, "r") as f:
     for word in f:
         for action in actions:
@@ -28,10 +27,12 @@ with open(args.wordlist, "r") as f:
             
             r_get = requests.get(url=url).status_code
             r_post = requests.post(url=url).status_code
+            r_put = requests.put(url=url).status_code
+            r_patch = requests.patch(url=url).status_code
 
             if(r_get not in [204,401,403,404] or r_post not in [204,401,403,404]):
                 print('                    \r', end='')
-                print("/{word}/{action:10} - \t{get}\t{post}".format(word=word.strip(), action=action, get=r_get, post=r_post))
+                print("/{word}/{action:10} - \t{get}\t{post}\t{put}\t{patch}".format(word=word.strip(), action=action, get=r_get, post=r_post, put=r_put, patch=r_patch))
 
 print('\r', end='')
 print("Wordlist complete. Goodbye.")
