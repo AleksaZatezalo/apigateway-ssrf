@@ -1,3 +1,3 @@
-# Apigateway SSRF
+# Apigateway SSRF For Directus
 
-Takes advantage of a the API gateway hosted by OffSec for the WEB300 Course. Exploits an SSRF in order to obtain RCE.
+This repo exploits the API gateway for Directus in order to obtain RCE.
