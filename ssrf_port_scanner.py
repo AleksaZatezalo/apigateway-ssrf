@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import requests
+import ipaddress
 from typing import List, Dict, Any
 
 
@@ -14,6 +15,23 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument('-v', '--verbose', help='Enable verbose mode', action="store_true", default=False)
     return parser.parse_args()
 
+def generate_urls(ip_range):
+    """
+    Generate a list of URLs from an IP range.
+    
+    Args:
+        ip_range (str): IP range in CIDR notation (e.g., '192.168.1.0/24')
+    
+    Returns:
+        list: List of URLs in the format 'http://ip'
+    """
+    # Parse the IP network from the CIDR notation
+    network = ipaddress.ip_network(ip_range, strict=False)
+    
+    # Generate URLs for each IP in the range
+    urls = [f"http://{ip}" for ip in network]
+    
+    return urls
 
 def get_ports_to_scan(ports_arg: str = None) -> List[int]:
     """Get the list of ports to scan, either from arguments or default list."""
@@ -99,15 +117,17 @@ def main() -> None:
     """Main function to coordinate the scanning process."""
     args = parse_arguments()
     ports = get_ports_to_scan(args.ports)
-    
-    print(f"Scanning {args.ssrf} through {args.target}")
-    print(f"Ports to scan: {len(ports)}")
-    print("Port   \t Status")
-    print("-------\t-----------------")
-    
-    for port in ports:
-        result = scan_port(args.target, args.ssrf, port, args.timeout)
-        display_result(result, args.verbose)
+     
+    url_list = generate_urls(args.ssrf)
+    for ssrf in url_list:
+        print(f"\nScanning {ssrf} through {args.target}")
+        print(f"Ports to scan: {len(ports)}")
+        print("Port   \t Status")
+        print("-------\t-----------------")
+        
+        for port in ports:
+            result = scan_port(args.target, ssrf, port, args.timeout)
+            display_result(result, args.verbose)
 
 
 if __name__ == "__main__":
